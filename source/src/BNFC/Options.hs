@@ -12,7 +12,7 @@ module BNFC.Options
   , SharedOptions(..)
   , defaultOptions, isDefault, printOptions
   , AlexVersion(..), HappyMode(..), OCamlParser(..), JavaLexerParser(..)
-  , RecordPositions(..), TokenText(..)
+  , RecordPositions(..), TokenText(..), ErrorType(..)
   , InPackage
   , removedIn290
   , translateOldOptions
@@ -81,6 +81,12 @@ instance Show Target where
   show TargetPygments     = "Pygments"
   show TargetCheck        = "Check LBNF file"
 
+-- | Which error type to use in the generated parser result?
+data ErrorType
+  = ErrorTypeString        -- ^ Errors are plain strings.
+  | ErrorTypeStructured    -- ^ Errors are values of a record/structure type.
+  deriving (Show,Eq,Ord)
+
 -- | Which version of Alex is targeted?
 data AlexVersion = Alex3
   deriving (Show,Eq,Ord,Bounded,Enum)
@@ -131,6 +137,7 @@ data SharedOptions = Options
   , glr           :: HappyMode   -- ^ Happy option @--glr@.
   , xml           :: Int         -- ^ Options @--xml@, generate DTD and XML printers.
   , agda          :: Bool        -- ^ Option @--agda@. Create bindings for Agda?
+  , errorType     :: ErrorType   -- ^ An error type to use in the parser result.
   --- OCaml specific
   , ocamlParser   :: OCamlParser -- ^ Option @--menhir@ to switch to @Menhir@.
   --- Java specific
@@ -164,6 +171,7 @@ defaultOptions = Options
   , glr             = Standard
   , xml             = 0
   , agda            = False
+  , errorType       = ErrorTypeString
   -- OCaml specific
   , ocamlParser     = OCamlYacc
   -- Java specific
@@ -223,6 +231,7 @@ printOptions opts = unwords . concat $
   , [ "--xml"             | xml opts == 1                       ]
   , [ "--xmlt"            | xml opts == 2                       ]
   , [ "--agda"            | agda opts                           ]
+  , [ "--structured-errors" | errorType opts == ErrorTypeStructured ]
   -- C# options:
   , [ "--vs"              | visualStudio opts                   ]
   , [ "--wfc"             | wcf opts                            ]
@@ -362,6 +371,12 @@ specificOptions =
   , ( Option []    ["generic"] (NoArg (\o -> o {generic = True}))
           "Derive Data, Generic, and Typeable instances for AST types"
     , haskellTargets )
+  , ( Option []    ["structured-errors"] (NoArg (\o -> o {errorType = ErrorTypeStructured}))
+          "Return structured errors from the parser"
+    , [TargetHaskell] )
+  , ( Option []    ["string-errors"] (NoArg (\o -> o {errorType = ErrorTypeString}))
+          "Return string errors from the parser (default)"
+    , [TargetHaskell] )
   , ( Option []    ["xml"] (NoArg (\o -> o {xml = 1}))
           "Also generate a DTD and an XML printer"
     , haskellTargets )
