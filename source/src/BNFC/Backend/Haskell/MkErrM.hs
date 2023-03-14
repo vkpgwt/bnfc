@@ -51,6 +51,7 @@ mkErrM errMod ErrorTypeString = Just $ vcat
     , "-- | Error monad with 'String' error messages."
     , "type Err = Either String"
     , ""
+    , "{-# COMPLETE Ok, Bad #-}"
     , "pattern Bad msg = Left msg"
     , "pattern Ok  a   = Right a"
     , ""
